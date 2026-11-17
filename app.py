@@ -3,18 +3,16 @@ import yt_dlp
 from youtubesearchpython import VideosSearch
 from faster_whisper import WhisperModel
 from deep_translator import GoogleTranslator
-import cv2, subprocess, os, re
+import subprocess, os, re
 
 st.set_page_config(page_title="GTA 6 Viral Clips AI", page_icon="🎮", layout="wide")
 os.makedirs("clips", exist_ok=True)
 
 @st.cache_resource
 def load_models():
-    wm = WhisperModel("tiny", device="cpu", compute_type="int8")
-    fc = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    return wm, fc
+    return WhisperModel("tiny", device="cpu", compute_type="int8")
 
-whisper_model, face_cascade = load_models()
+whisper_model = load_models()
 
 st.title("🎮 استوديو صانع الشورت الفيروسي (مجاني 100%)")
 
@@ -40,7 +38,7 @@ if 'vids' in st.session_state and st.session_state['vids']:
     cols = st.columns(3)
     for idx, v in enumerate(vids):
         with cols[idx % 3]:
-            st.image(v.get('thumbnails', [{}])[0].get('url', ''), use_container_width=True)
+            st.image(v.get('thumbnails', [{}]).get('url', ''), use_container_width=True)
             st.markdown(f"**{v.get('title', '')[:55]}...**")
             st.caption(f"🎮 {v.get('channel', {}).get('name', '')} | 👁️ {v.get('viewCount', {}).get('short', '')} | 📅 {v.get('publishedTime', '')}")
     options = [f"{v.get('title', '')[:50]} | {v.get('link', '')}" for v in vids]
@@ -115,18 +113,8 @@ if 'clips' in st.session_state and st.session_state['clips']:
                 tag = r"{\fscx115\fscy115\t(0,120,\fscx100\fscy100)}" if "نبضة" in anim else r"{\fad(80,80)}"
                 evs.append(f"Dialogue: 0,{ft(s.start)},{ft(s.end)},Default,,0,0,0,,{tag}{txt}\\N{{\\fs44\\c&H00FFFFFF&}}({fr})")
             open(af_path, "w", encoding="utf-8").write(hdr + "\n".join(evs))
-            cap = cv2.VideoCapture(rv)
-            ret, frame = cap.read()
-            fx = 0.5
-            if ret:
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-                if len(faces) > 0:
-                    x, y, w, h = faces[0]
-                    fx = min(max((x + w/2) / frame.shape[1], 0.2), 0.8)
-            cap.release()
             if "تقسيم" in lay:
-                vf = f"[0:v]split=2[top][bot];[top]crop=ih*0.6:ih*0.6:iw*{fx}-ih*0.3:0,scale=1080:720[t];[bot]scale=1080:1200:force_original_aspect_ratio=increase,crop=1080:1200[b];[t][b]vstack=inputs=2"
+                vf = "[0:v]split=2[top][bot];[top]crop=ih*0.6:ih*0.6:iw*0.1:ih*0.1,scale=1080:720[t];[bot]scale=1080:1200:force_original_aspect_ratio=increase,crop=1080:1200[b];[t][b]vstack=inputs=2"
             elif "ضبابية" in lay:
                 vf = "[0:v]split=2[bg][fg];[bg]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=25:5[b];[fg]scale=1080:-2[f];[b][f]overlay=(W-w)/2:(H-h)/2"
             else:
@@ -142,4 +130,4 @@ if 'clips' in st.session_state and st.session_state['clips']:
                 st.video(fv)
                 with open(fv, "rb") as file:
                     st.download_button("⬇️ تحميل الفيديو بجودة 1080p", data=file, file_name="viral_short_1080p.mp4", mime="video/mp4", use_container_width=True)
-          
+                    
