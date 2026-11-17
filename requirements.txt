@@ -1,0 +1,7 @@
+streamlit
+yt-dlp
+youtube-search-python
+faster-whisper
+deep-translator
+opencv-python-headless
+numpy
